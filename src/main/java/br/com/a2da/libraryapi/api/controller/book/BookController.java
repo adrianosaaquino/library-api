@@ -64,17 +64,17 @@ public class BookController {
     @ResponseStatus(HttpStatus.OK)
     public BookDTO update(@PathVariable Long id, @RequestBody @Valid BookForm bookForm) {
 
-        Book bookInstance = bookService
-                .findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return bookService.findById(id).map(bookInstance -> {
 
-        bookInstance.setAuthor(bookForm.getAuthor());
-        bookInstance.setTitle(bookForm.getTitle());
-        bookInstance.setIsbn(bookForm.getIsbn());
+            bookInstance.setAuthor(bookForm.getAuthor());
+            bookInstance.setTitle(bookForm.getTitle());
+            bookInstance.setIsbn(bookForm.getIsbn());
 
-        return BookDTO.bindToDTO(
-                bookService.update(bookInstance)
-        );
+            return BookDTO.bindToDTO(
+                    bookService.update(bookInstance)
+            );
+
+        }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
