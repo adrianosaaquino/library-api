@@ -1,8 +1,8 @@
 package br.com.a2da.libraryapi.api.controller;
 
 import br.com.a2da.libraryapi.api.controller.util.ControllerHelperService;
-import br.com.a2da.libraryapi.api.dto.BookDTO;
 import br.com.a2da.libraryapi.api.exception.BusinessException;
+import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.api.model.Book;
 import br.com.a2da.libraryapi.api.service.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,16 +60,16 @@ public class BookControllerTest {
         // Given a valid JSON body
         String jsonRequest = objectMapper.writeValueAsString(
                 new HashMap<Object, Object>() {{
-                    put("author", BookCHTest.MACHADO_DE_ASSIS);
-                    put("title", BookCHTest.DOM_CASMURRO);
-                    put("isbn", BookCHTest.DOM_CASMURRO_ISBN);
+                    put("author", BookHelperTest.MACHADO_DE_ASSIS);
+                    put("title", BookHelperTest.DOM_CASMURRO);
+                    put("isbn", BookHelperTest.DOM_CASMURRO_ISBN);
                 }}
         );
 
         // Expected that call save
         BDDMockito
                 .given(bookServiceMocked.save(Mockito.any(Book.class)))
-                .willReturn(BookCHTest.createNewBook());
+                .willReturn(BookHelperTest.createBook());
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -83,10 +83,10 @@ public class BookControllerTest {
         // Then validate response
         resultActions
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("id").value(BookCHTest.ID))
-                .andExpect(jsonPath("author").value(BookCHTest.MACHADO_DE_ASSIS))
-                .andExpect(jsonPath("title").value(BookCHTest.DOM_CASMURRO))
-                .andExpect(jsonPath("isbn").value(BookCHTest.DOM_CASMURRO_ISBN));
+                .andExpect(jsonPath("id").value(BookHelperTest.ID))
+                .andExpect(jsonPath("author").value(BookHelperTest.MACHADO_DE_ASSIS))
+                .andExpect(jsonPath("title").value(BookHelperTest.DOM_CASMURRO))
+                .andExpect(jsonPath("isbn").value(BookHelperTest.DOM_CASMURRO_ISBN));
 
         // And check book bind to save
         ArgumentCaptor<Book> bookFromBookForm = ArgumentCaptor.forClass(Book.class);
@@ -95,9 +95,9 @@ public class BookControllerTest {
                 .save(bookFromBookForm.capture());
 
         Book bookSaveParam = bookFromBookForm.getValue();
-        Assertions.assertThat(bookSaveParam.getAuthor()).isEqualTo(BookCHTest.MACHADO_DE_ASSIS);
-        Assertions.assertThat(bookSaveParam.getTitle()).isEqualTo(BookCHTest.DOM_CASMURRO);
-        Assertions.assertThat(bookSaveParam.getIsbn()).isEqualTo(BookCHTest.DOM_CASMURRO_ISBN);
+        Assertions.assertThat(bookSaveParam.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        Assertions.assertThat(bookSaveParam.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+        Assertions.assertThat(bookSaveParam.getIsbn()).isEqualTo(BookHelperTest.DOM_CASMURRO_ISBN);
     }
 
     @Test
@@ -131,9 +131,9 @@ public class BookControllerTest {
         // Given JSON body with duplicated isbn
         String jsonRequest = objectMapper.writeValueAsString(
                 new HashMap<Object, Object>() {{
-                    put("author", BookCHTest.MACHADO_DE_ASSIS);
-                    put("title", BookCHTest.DOM_CASMURRO);
-                    put("isbn", BookCHTest.DOM_CASMURRO_ISBN);
+                    put("author", BookHelperTest.MACHADO_DE_ASSIS);
+                    put("title", BookHelperTest.DOM_CASMURRO);
+                    put("isbn", BookHelperTest.DOM_CASMURRO_ISBN);
                 }}
         );
 
@@ -165,12 +165,12 @@ public class BookControllerTest {
 
         // Expected that call findById
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID))
-                .willReturn(Optional.of(BookCHTest.createNewBook()));
+                .given(bookServiceMocked.findById(BookHelperTest.ID))
+                .willReturn(Optional.of(BookHelperTest.createBook()));
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get(BOOK_API.concat("/" + BookCHTest.ID))
+                .get(BOOK_API.concat("/" + BookHelperTest.ID))
                 .accept(MediaType.APPLICATION_JSON);
 
         ResultActions resultActions = mockMvc.perform(request);
@@ -178,10 +178,10 @@ public class BookControllerTest {
         // Then validate response
         resultActions
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("id").value(BookCHTest.ID))
-                .andExpect(jsonPath("author").value(BookCHTest.MACHADO_DE_ASSIS))
-                .andExpect(jsonPath("title").value(BookCHTest.DOM_CASMURRO))
-                .andExpect(jsonPath("isbn").value(BookCHTest.DOM_CASMURRO_ISBN))
+                .andExpect(jsonPath("id").value(BookHelperTest.ID))
+                .andExpect(jsonPath("author").value(BookHelperTest.MACHADO_DE_ASSIS))
+                .andExpect(jsonPath("title").value(BookHelperTest.DOM_CASMURRO))
+                .andExpect(jsonPath("isbn").value(BookHelperTest.DOM_CASMURRO_ISBN))
         ;
     }
 
@@ -193,12 +193,12 @@ public class BookControllerTest {
 
         // Expected that call findById
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID_NOT_FOUND))
+                .given(bookServiceMocked.findById(BookHelperTest.ID_NOT_FOUND))
                 .willReturn(Optional.empty());
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get(BOOK_API.concat("/" + BookCHTest.ID_NOT_FOUND))
+                .get(BOOK_API.concat("/" + BookHelperTest.ID_NOT_FOUND))
                 .accept(MediaType.APPLICATION_JSON);
 
         ResultActions resultActions = mockMvc.perform(request);
@@ -217,12 +217,12 @@ public class BookControllerTest {
 
         // Expected that call findById
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID))
-                .willReturn(Optional.of(BookCHTest.createNewBook()));
+                .given(bookServiceMocked.findById(BookHelperTest.ID))
+                .willReturn(Optional.of(BookHelperTest.createBook()));
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .delete(BOOK_API.concat("/" + BookCHTest.ID));
+                .delete(BOOK_API.concat("/" + BookHelperTest.ID));
 
         ResultActions resultActions = mockMvc.perform(request);
 
@@ -237,7 +237,7 @@ public class BookControllerTest {
                 .delete(bookFromFindById.capture());
 
         Book bookDeleteParam = bookFromFindById.getValue();
-        Assertions.assertThat(bookDeleteParam.getId()).isEqualTo(BookCHTest.ID);
+        Assertions.assertThat(bookDeleteParam.getId()).isEqualTo(BookHelperTest.ID);
     }
 
     @Test
@@ -248,12 +248,12 @@ public class BookControllerTest {
 
         // Expected that call findById
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID_NOT_FOUND))
+                .given(bookServiceMocked.findById(BookHelperTest.ID_NOT_FOUND))
                 .willReturn(Optional.empty());
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .delete(BOOK_API.concat("/" + BookCHTest.ID_NOT_FOUND));
+                .delete(BOOK_API.concat("/" + BookHelperTest.ID_NOT_FOUND));
 
         ResultActions resultActions = mockMvc.perform(request);
 
@@ -274,17 +274,17 @@ public class BookControllerTest {
         // Given a valid JSON body
         String jsonRequest = objectMapper.writeValueAsString(
                 new HashMap<Object, Object>() {{
-                    put("author", BookCHTest.JORGE_AMADO);
-                    put("title", BookCHTest.CAPITAES_DA_AREIA);
-                    put("isbn", BookCHTest.CAPITAES_DA_AREIA_ISBN);
+                    put("author", BookHelperTest.JORGE_AMADO);
+                    put("title", BookHelperTest.CAPITAES_DA_AREIA);
+                    put("isbn", BookHelperTest.CAPITAES_DA_AREIA_ISBN);
                 }}
         );
 
         // Expected that call findById
-        Book bookToBeUpdateMocked = BookCHTest.createNewBook();
+        Book bookToBeUpdateMocked = BookHelperTest.createBook();
 
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID))
+                .given(bookServiceMocked.findById(BookHelperTest.ID))
                 .willReturn(Optional.of(bookToBeUpdateMocked));
 
         // And update
@@ -294,7 +294,7 @@ public class BookControllerTest {
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .put(BOOK_API + "/" + BookCHTest.ID)
+                .put(BOOK_API + "/" + BookHelperTest.ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(jsonRequest);
@@ -304,22 +304,22 @@ public class BookControllerTest {
         // Then validate response
         resultActions
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("id").value(BookCHTest.ID))
-                .andExpect(jsonPath("author").value(BookCHTest.JORGE_AMADO))
-                .andExpect(jsonPath("title").value(BookCHTest.CAPITAES_DA_AREIA))
-                .andExpect(jsonPath("isbn").value(BookCHTest.CAPITAES_DA_AREIA_ISBN));
+                .andExpect(jsonPath("id").value(BookHelperTest.ID))
+                .andExpect(jsonPath("author").value(BookHelperTest.JORGE_AMADO))
+                .andExpect(jsonPath("title").value(BookHelperTest.CAPITAES_DA_AREIA))
+                .andExpect(jsonPath("isbn").value(BookHelperTest.CAPITAES_DA_AREIA_ISBN));
 
-        // And check book bind to update
+        // And
         ArgumentCaptor<Book> bookFromFindById = ArgumentCaptor.forClass(Book.class);
         BDDMockito
                 .verify(bookServiceMocked, Mockito.times(1))
                 .update(bookFromFindById.capture());
 
         Book bookUpdateParam = bookFromFindById.getValue();
-        Assertions.assertThat(bookUpdateParam.getId()).isEqualTo(BookCHTest.ID);
-        Assertions.assertThat(bookUpdateParam.getAuthor()).isEqualTo(BookCHTest.JORGE_AMADO);
-        Assertions.assertThat(bookUpdateParam.getTitle()).isEqualTo(BookCHTest.CAPITAES_DA_AREIA);
-        Assertions.assertThat(bookUpdateParam.getIsbn()).isEqualTo(BookCHTest.CAPITAES_DA_AREIA_ISBN);
+        Assertions.assertThat(bookUpdateParam.getId()).isEqualTo(BookHelperTest.ID);
+        Assertions.assertThat(bookUpdateParam.getAuthor()).isEqualTo(BookHelperTest.JORGE_AMADO);
+        Assertions.assertThat(bookUpdateParam.getTitle()).isEqualTo(BookHelperTest.CAPITAES_DA_AREIA);
+        Assertions.assertThat(bookUpdateParam.getIsbn()).isEqualTo(BookHelperTest.CAPITAES_DA_AREIA_ISBN);
     }
 
     @Test
@@ -329,20 +329,20 @@ public class BookControllerTest {
         // Given a valid JSON body
         String jsonRequest = objectMapper.writeValueAsString(
                 new HashMap<Object, Object>() {{
-                    put("author", BookCHTest.JORGE_AMADO);
-                    put("title", BookCHTest.CAPITAES_DA_AREIA);
-                    put("isbn", BookCHTest.CAPITAES_DA_AREIA_ISBN);
+                    put("author", BookHelperTest.JORGE_AMADO);
+                    put("title", BookHelperTest.CAPITAES_DA_AREIA);
+                    put("isbn", BookHelperTest.CAPITAES_DA_AREIA_ISBN);
                 }}
         );
 
         // Expected that call findById
         BDDMockito
-                .given(bookServiceMocked.findById(BookCHTest.ID_NOT_FOUND))
+                .given(bookServiceMocked.findById(BookHelperTest.ID_NOT_FOUND))
                 .willReturn(Optional.empty());
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .put(BOOK_API + "/" + BookCHTest.ID)
+                .put(BOOK_API + "/" + BookHelperTest.ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(jsonRequest);
@@ -353,7 +353,7 @@ public class BookControllerTest {
         resultActions
                 .andExpect(status().isNotFound());
 
-        // And check book bind to update
+        // And
         ArgumentCaptor<Book> bookFromFindById = ArgumentCaptor.forClass(Book.class);
         BDDMockito
                 .verify(bookServiceMocked, Mockito.never())
@@ -362,46 +362,3 @@ public class BookControllerTest {
 
 }
 
-// BookControllerHelperTest
-class BookCHTest {
-
-    public static Long ID_NOT_FOUND = 12L;
-    public static Long ID = 11L;
-    public static String MACHADO_DE_ASSIS = "Machado de Assis";
-    public static String DOM_CASMURRO = "Dom Casmurro";
-    public static String DOM_CASMURRO_ISBN = "1111111111111111111";
-    public static String JORGE_AMADO = "Jorge Amado";
-    public static String CAPITAES_DA_AREIA = "Capitães da Areia";
-    public static String CAPITAES_DA_AREIA_ISBN = "222222222222222222";
-
-    public static Book createNewBook() {
-        return Book.builder()
-                .id(ID)
-                .author(MACHADO_DE_ASSIS)
-                .title(DOM_CASMURRO)
-                .isbn(DOM_CASMURRO_ISBN)
-                .build();
-    }
-
-    public static Book createNewBook(Long id) {
-        return Book.builder()
-                .id(id)
-                .author(MACHADO_DE_ASSIS)
-                .title(DOM_CASMURRO)
-                .isbn(DOM_CASMURRO_ISBN)
-                .build();
-    }
-
-    static BookDTO createNewBookDTO(String author, String title, String isbn) {
-        return BookDTO.builder()
-                .author(author)
-                .title(title)
-                .isbn(isbn)
-                .build();
-    }
-
-    static BookDTO createNewBookDTO() {
-        return createNewBookDTO(MACHADO_DE_ASSIS, DOM_CASMURRO, DOM_CASMURRO_ISBN);
-    }
-
-}

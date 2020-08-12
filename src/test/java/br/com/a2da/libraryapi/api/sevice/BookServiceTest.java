@@ -1,6 +1,7 @@
 package br.com.a2da.libraryapi.api.sevice;
 
 import br.com.a2da.libraryapi.api.exception.BusinessException;
+import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.api.model.Book;
 import br.com.a2da.libraryapi.api.repository.BookRepository;
 import br.com.a2da.libraryapi.api.service.BookService;
@@ -10,89 +11,121 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
 public class BookServiceTest {
 
-    BookService service;
+    BookService bookService;
 
     @MockBean
     BookRepository repositoryMocked;
 
     @BeforeEach
     public void setUp() {
-        this.service = new BookServiceImpl(repositoryMocked);
+        this.bookService = new BookServiceImpl(repositoryMocked);
     }
 
     @Test
     @DisplayName("Deve salvar um livro")
     public void saveBookTest() {
 
-        // cenario
-        Book book = BookServiceHelperTest.createNewBook();
+        // Given a valid Book
+        Book bookToSave = BookHelperTest.createBookWithNullId();
 
-        // expected
-        Mockito.when(repositoryMocked.existsByIsbn(book.getIsbn())).thenReturn(
-                false
-        );
-        Mockito.when(repositoryMocked.save(book)).thenReturn(
-                Book.builder()
-                        .id(1L)
-                        .title("Um titulo")
-                        .author("Um author")
-                        .isbn("133")
-                        .build()
-        );
+        // Expected that call existsByIsbn
+        BDDMockito
+                .given(repositoryMocked.existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN))
+                .willReturn(false);
 
-        // execuçao
-        Book savedBook = service.save(book);
+        // and save
+        BDDMockito
+                .given(repositoryMocked.save(bookToSave))
+                .willReturn(BookHelperTest.createBook());
 
-        // verificaçao
-        assertThat(savedBook.getId()).isNotNull();
-        assertThat(savedBook.getIsbn()).isEqualTo("133");
-        assertThat(savedBook.getTitle()).isEqualTo("Um titulo");
-        assertThat(savedBook.getAuthor()).isEqualTo("Um author");
+        // When execute save
+        Book bookSaved = bookService.save(bookToSave);
+
+        // Then validate save return
+        Assertions.assertThat(bookSaved.getId()).isEqualTo(BookHelperTest.ID);
+        Assertions.assertThat(bookSaved.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        Assertions.assertThat(bookSaved.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+        Assertions.assertThat(bookSaved.getIsbn()).isEqualTo(BookHelperTest.DOM_CASMURRO_ISBN);
     }
 
     @Test
     @DisplayName("Deve lançar erro de negocio ao tentar salvar um livro com isbn duplicado")
     public void shouldNotSaveABookWithDuplicatedISBN() {
 
-        // cenario
-        Book book = BookServiceHelperTest.createNewBook();
+        // Given a valid Book
+        Book bookInstance = BookHelperTest.createBook();
 
-        // expected
-        Mockito.when(repositoryMocked.existsByIsbn(book.getIsbn())).thenReturn(
-                true
-        );
+        // Expected that call existsByIsbn
+        BDDMockito
+                .given(repositoryMocked.existsByIsbn(bookInstance.getIsbn()))
+                .willReturn(true);
 
-        // execuçao
-        Throwable exception = Assertions.catchThrowable(() -> service.save(book));
+        // When execute save
+        Throwable exception = Assertions.catchThrowable(() -> bookService.save(bookInstance));
 
-        assertThat(exception)
+        // Then validate exception
+        Assertions
+                .assertThat(exception)
                 .isNotNull()
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Isbn ja cadastrado");
 
-        Mockito.verify(repositoryMocked, Mockito.never()).save(book);
-    }
-}
-
-class BookServiceHelperTest {
-
-    static Book createNewBook() {
-        return Book.builder()
-                .title("Um titulo")
-                .author("Um author")
-                .isbn("133")
-                .build();
+        // And
+        BDDMockito
+                .verify(repositoryMocked, Mockito.never())
+                .save(bookInstance);
     }
 
+    @Test
+    @DisplayName("Deve obter um livro por id")
+    public void getByIdTest() {
+
+        // Given a existing Book
+        Book bookFoundInstance = BookHelperTest.createBook();
+
+        // Expected that call findById
+        BDDMockito
+                .given(repositoryMocked.findById(BookHelperTest.ID))
+                .willReturn(Optional.of(bookFoundInstance));
+
+        // When execute save
+        Optional<Book> foundBook = bookService.findById(BookHelperTest.ID);
+
+        // Then
+        Assertions.assertThat(foundBook.isPresent()).isTrue();
+        Assertions.assertThat(foundBook.get().getId()).isEqualTo(BookHelperTest.ID);
+        Assertions.assertThat(foundBook.get().getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        Assertions.assertThat(foundBook.get().getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+        Assertions.assertThat(foundBook.get().getIsbn()).isEqualTo(BookHelperTest.DOM_CASMURRO_ISBN);
+    }
+
+    @Test
+    @DisplayName("Deve retornar vazio ao obter um livro por Id que ele nao existe na base")
+    public void bookNotFoundByIdTest() {
+
+        // Given a existing Book
+
+        // Expected that call findById
+        BDDMockito
+                .given(repositoryMocked.findById(BookHelperTest.ID))
+                .willReturn(Optional.empty());
+
+        // When execute save
+        Optional<Book> foundBook = bookService.findById(BookHelperTest.ID);
+
+        // Then
+        Assertions.assertThat(foundBook.isPresent()).isFalse();
+    }
 }
