@@ -1,6 +1,5 @@
 package br.com.a2da.libraryapi.api.controller;
 
-import br.com.a2da.libraryapi.api.controller.util.ControllerHelperService;
 import br.com.a2da.libraryapi.api.exception.BusinessException;
 import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.api.model.Book;
@@ -8,6 +7,7 @@ import br.com.a2da.libraryapi.api.service.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,11 +47,16 @@ public class BookControllerTest {
     @MockBean
     BookService bookServiceMocked;
 
-    @MockBean
-    ControllerHelperService controllerHelperService;
-
     @Autowired
     ObjectMapper objectMapper;
+
+    @AfterEach
+    public void afterEachTest() {
+
+        BDDMockito
+                .verifyNoMoreInteractions(bookServiceMocked)
+        ;
+    }
 
     @Test
     @DisplayName("Deve criar um livro com sucesso")
@@ -88,7 +93,7 @@ public class BookControllerTest {
                 .andExpect(jsonPath("title").value(BookHelperTest.DOM_CASMURRO))
                 .andExpect(jsonPath("isbn").value(BookHelperTest.DOM_CASMURRO_ISBN));
 
-        // And check book bind to save
+        // And verify mocks interaction
         ArgumentCaptor<Book> bookFromBookForm = ArgumentCaptor.forClass(Book.class);
         BDDMockito
                 .verify(bookServiceMocked, Mockito.times(1))
@@ -155,6 +160,11 @@ public class BookControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(jsonPath("errors", Matchers.hasSize(1)))
                 .andExpect(jsonPath("errors[0]").value("Isbn ja cadastrado"));
+
+        // And verify mocks interaction
+        BDDMockito
+                .verify(bookServiceMocked, Mockito.times(1))
+                .save(Mockito.any(Book.class));
     }
 
     @Test
@@ -183,6 +193,11 @@ public class BookControllerTest {
                 .andExpect(jsonPath("title").value(BookHelperTest.DOM_CASMURRO))
                 .andExpect(jsonPath("isbn").value(BookHelperTest.DOM_CASMURRO_ISBN))
         ;
+
+        // And verify mocks interaction
+        BDDMockito
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID);
     }
 
     @Test
@@ -207,6 +222,11 @@ public class BookControllerTest {
         resultActions
                 .andExpect(status().isNotFound())
         ;
+
+        // And verify mocks interaction
+        BDDMockito
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID_NOT_FOUND);
     }
 
     @Test
@@ -230,8 +250,11 @@ public class BookControllerTest {
         resultActions
                 .andExpect(status().isNoContent());
 
-        // And check book to delete
+        // And verify mocks interaction
         ArgumentCaptor<Book> bookFromFindById = ArgumentCaptor.forClass(Book.class);
+        BDDMockito
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID);
         BDDMockito
                 .verify(bookServiceMocked, Mockito.times(1))
                 .delete(bookFromFindById.capture());
@@ -261,10 +284,10 @@ public class BookControllerTest {
         resultActions
                 .andExpect(status().isNotFound());
 
-        // And check book to delete
+        // And verify mocks interaction
         BDDMockito
-                .verify(bookServiceMocked, Mockito.never())
-                .delete(Mockito.any(Book.class));
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID_NOT_FOUND);
     }
 
     @Test
@@ -309,8 +332,11 @@ public class BookControllerTest {
                 .andExpect(jsonPath("title").value(BookHelperTest.CAPITAES_DA_AREIA))
                 .andExpect(jsonPath("isbn").value(BookHelperTest.CAPITAES_DA_AREIA_ISBN));
 
-        // And
+        // And verify mocks interaction
         ArgumentCaptor<Book> bookFromFindById = ArgumentCaptor.forClass(Book.class);
+        BDDMockito
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID);
         BDDMockito
                 .verify(bookServiceMocked, Mockito.times(1))
                 .update(bookFromFindById.capture());
@@ -342,7 +368,7 @@ public class BookControllerTest {
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .put(BOOK_API + "/" + BookHelperTest.ID)
+                .put(BOOK_API + "/" + BookHelperTest.ID_NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(jsonRequest);
@@ -353,11 +379,10 @@ public class BookControllerTest {
         resultActions
                 .andExpect(status().isNotFound());
 
-        // And
-        ArgumentCaptor<Book> bookFromFindById = ArgumentCaptor.forClass(Book.class);
+        // And verify mocks interaction
         BDDMockito
-                .verify(bookServiceMocked, Mockito.never())
-                .update(Mockito.any(Book.class));
+                .verify(bookServiceMocked, Mockito.times(1))
+                .findById(BookHelperTest.ID_NOT_FOUND);
     }
 
 }

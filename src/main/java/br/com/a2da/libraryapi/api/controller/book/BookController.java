@@ -1,12 +1,10 @@
 package br.com.a2da.libraryapi.api.controller.book;
 
-import br.com.a2da.libraryapi.api.controller.util.ControllerHelperService;
 import br.com.a2da.libraryapi.api.dto.BookDTO;
 import br.com.a2da.libraryapi.api.exception.ApiErrors;
 import br.com.a2da.libraryapi.api.exception.BusinessException;
 import br.com.a2da.libraryapi.api.model.Book;
 import br.com.a2da.libraryapi.api.service.BookService;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,13 +18,9 @@ import javax.validation.Valid;
 public class BookController {
 
     private BookService bookService;
-    private ModelMapper modelMapper;
-    private ControllerHelperService controllerHelperService;
 
-    public BookController(BookService bookService, ModelMapper modelMapper, ControllerHelperService controllerHelperService) {
+    public BookController(BookService bookService) {
         this.bookService = bookService;
-        this.modelMapper = modelMapper;
-        this.controllerHelperService = controllerHelperService;
     }
 
     @PostMapping
