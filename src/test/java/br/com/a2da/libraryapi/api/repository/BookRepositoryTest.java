@@ -1,5 +1,6 @@
 package br.com.a2da.libraryapi.api.repository;
 
+import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.api.model.Book;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,21 +25,20 @@ public class BookRepositoryTest {
     BookRepository repository;
 
     public void setUp() {
-
     }
 
     @Test
     @DisplayName("Deve retornar verdadeiro quando o livro existir na base com o isbn informado")
     public void returnTrueWhenIsbnExists() {
 
-        // cenario
-        entityManager.persist(BookRepositoryHelperTest.createNewBook());
+        // Given a saved Book
+        Book bookSavedInstance = BookHelperTest.createBookWithNullId();
+        entityManager.persist(bookSavedInstance);
 
-        // execuçao
-        boolean exists = repository.existsByIsbn(BookRepositoryHelperTest.ISBN);
+        // When
+        boolean exists = repository.existsByIsbn(bookSavedInstance.getIsbn());
 
-
-        // verificacao
+        // Then
         assertThat(exists).isTrue();
     }
 
@@ -46,30 +46,14 @@ public class BookRepositoryTest {
     @DisplayName("Deve retornar false quando nao existir um livo na base com o isbn informado")
     public void returnFalseWhenIsbnDoesntExists() {
 
-        // cenario
-        entityManager.persist(BookRepositoryHelperTest.createNewBook());
+        // Given a saved Book
+        Book bookSavedInstance = BookHelperTest.createBookWithNullId();
+        entityManager.persist(bookSavedInstance);
 
-        // execuçao
-        boolean exists = repository.existsByIsbn("456");
+        // When
+        boolean exists = repository.existsByIsbn(BookHelperTest.CAPITAES_DA_AREIA_ISBN);
 
-
-        // verificacao
+        // Then
         assertThat(exists).isFalse();
     }
-}
-
-class BookRepositoryHelperTest {
-
-    public static String TITLE = "Um titulo";
-    public static String AUTHOR = "Um author";
-    public static String ISBN = "133";
-
-    public static Book createNewBook() {
-        return Book.builder()
-                .title(TITLE)
-                .author(AUTHOR)
-                .isbn(ISBN)
-                .build();
-    }
-
 }
