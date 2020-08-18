@@ -1,6 +1,6 @@
 package br.com.a2da.libraryapi.api.controller.book;
 
-import br.com.a2da.libraryapi.api.dto.BookDTO;
+import br.com.a2da.libraryapi.api.controller.util.MarshallerService;
 import br.com.a2da.libraryapi.api.exception.ApiErrors;
 import br.com.a2da.libraryapi.api.exception.BusinessException;
 import br.com.a2da.libraryapi.api.model.Book;
@@ -12,33 +12,36 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
 
     private BookService bookService;
+    private MarshallerService marshallerService;
 
-    public BookController(BookService bookService) {
+    public BookController(BookService bookService, MarshallerService marshallerService) {
         this.bookService = bookService;
+        this.marshallerService = marshallerService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookDTO save(@RequestBody @Valid BookForm bookForm) {
+    public HashMap<String, Object> save(@RequestBody @Valid BookForm bookForm) {
 
         Book bookInstance = bookService.save(
                 bookForm.bindToSaveModel()
         );
 
-        return BookDTO.bindToDTO(bookInstance);
+        return marshallerService.bindBook(bookInstance);
     }
 
     @GetMapping("{id}")
-    public BookDTO show(@PathVariable Long id) {
+    public HashMap<String, Object> show(@PathVariable Long id) {
 
         return bookService.findById(id)
-                .map(BookDTO::bindToDTO)
+                .map(bookInstance -> marshallerService.bindBook(bookInstance))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND))
                 ;
     }
@@ -47,16 +50,16 @@ public class BookController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
 
-        Book book = bookService
-                .findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Book book = bookService.findById(id).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND)
+        );
 
         bookService.delete(book);
     }
 
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
-    public BookDTO update(@PathVariable Long id, @RequestBody @Valid BookForm bookForm) {
+    public HashMap<String, Object> update(@PathVariable Long id, @RequestBody @Valid BookForm bookForm) {
 
         return bookService.findById(id).map(bookInstance -> {
 
@@ -64,7 +67,7 @@ public class BookController {
             bookInstance.setTitle(bookForm.getTitle());
             bookInstance.setIsbn(bookForm.getIsbn());
 
-            return BookDTO.bindToDTO(
+            return marshallerService.bindBook(
                     bookService.update(bookInstance)
             );
 
