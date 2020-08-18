@@ -1,4 +1,4 @@
-package br.com.a2da.libraryapi.api.controller;
+package br.com.a2da.libraryapi.api.controller.book;
 
 import br.com.a2da.libraryapi.api.controller.util.MarshallerService;
 import br.com.a2da.libraryapi.api.exception.BusinessException;
