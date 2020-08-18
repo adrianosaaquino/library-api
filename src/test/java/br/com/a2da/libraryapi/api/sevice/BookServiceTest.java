@@ -30,7 +30,7 @@ public class BookServiceTest {
     BookService bookService;
 
     @MockBean
-    BookRepository repositoryMocked;
+    BookRepository bookRepositoryMocked;
 
     final Book bookToSaveMocked = mock(Book.class);
     final Book bookSavedMocked = mock(Book.class);
@@ -39,13 +39,13 @@ public class BookServiceTest {
 
     @BeforeEach
     public void setUp() {
-        this.bookService = new BookServiceImpl(repositoryMocked);
+        this.bookService = new BookServiceImpl(bookRepositoryMocked);
     }
 
     @AfterEach
     public void afterEachTest() {
 
-        verifyNoMoreInteractions(repositoryMocked);
+        verifyNoMoreInteractions(bookRepositoryMocked);
     }
 
     @Test
@@ -56,8 +56,8 @@ public class BookServiceTest {
 
         // Expected that call
         given(bookToSaveMocked.getIsbn()).willReturn(BookHelperTest.DOM_CASMURRO_ISBN);
-        given(repositoryMocked.existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN)).willReturn(false);
-        given(repositoryMocked.save(bookToSaveMocked)).willReturn(bookSavedMocked);
+        given(bookRepositoryMocked.existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN)).willReturn(false);
+        given(bookRepositoryMocked.save(bookToSaveMocked)).willReturn(bookSavedMocked);
 
         // When execute save
         Book bookSaved = bookService.save(bookToSaveMocked);
@@ -67,8 +67,8 @@ public class BookServiceTest {
 
         // And verify mocks interaction
         verify(bookToSaveMocked, times(1)).getIsbn();
-        verify(repositoryMocked, times(1)).existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN);
-        verify(repositoryMocked, times(1)).save(Mockito.any(Book.class));
+        verify(bookRepositoryMocked, times(1)).existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN);
+        verify(bookRepositoryMocked, times(1)).save(Mockito.any(Book.class));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class BookServiceTest {
 
         // Expected that call existsByIsbn
         given(bookToSaveMocked.getIsbn()).willReturn(BookHelperTest.DOM_CASMURRO_ISBN);
-        given(repositoryMocked.existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN)).willReturn(true);
+        given(bookRepositoryMocked.existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN)).willReturn(true);
 
         // When execute save
         Throwable exception = Assertions.catchThrowable(() -> bookService.save(bookToSaveMocked));
@@ -92,7 +92,7 @@ public class BookServiceTest {
 
         // And verify mocks interaction
         verify(bookToSaveMocked, times(1)).getIsbn();
-        verify(repositoryMocked, times(1)).existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN);
+        verify(bookRepositoryMocked, times(1)).existsByIsbn(BookHelperTest.DOM_CASMURRO_ISBN);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class BookServiceTest {
         // Given a existing Book
 
         // Expected that call findById
-        given(repositoryMocked.findById(ID)).willReturn(Optional.of(bookSavedMocked));
+        given(bookRepositoryMocked.findById(ID)).willReturn(Optional.of(bookSavedMocked));
 
         // When execute save
         Optional<Book> foundBook = bookService.findById(ID);
@@ -112,7 +112,7 @@ public class BookServiceTest {
         assertThat(foundBook.get()).isEqualTo(bookSavedMocked);
 
         // And verify mocks interaction
-        verify(repositoryMocked, times(1)).findById(ID);
+        verify(bookRepositoryMocked, times(1)).findById(ID);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class BookServiceTest {
         // Given a existing Book
 
         // Expected that call findById
-        given(repositoryMocked.findById(ID_NOT_FOUND)).willReturn(Optional.empty());
+        given(bookRepositoryMocked.findById(ID_NOT_FOUND)).willReturn(Optional.empty());
 
         // When execute save
         Optional<Book> foundBook = bookService.findById(ID_NOT_FOUND);
@@ -131,6 +131,109 @@ public class BookServiceTest {
         assertThat(foundBook.isPresent()).isFalse();
 
         // And verify mocks interaction
-        verify(repositoryMocked, times(1)).findById(ID_NOT_FOUND);
+        verify(bookRepositoryMocked, times(1)).findById(ID_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("Deve excluir um livro")
+    public void deleteBookTest() {
+
+        // Given
+        given(bookSavedMocked.getId()).willReturn(ID);
+
+        // When
+        bookService.delete(bookSavedMocked);
+
+        // Then
+        verify(bookSavedMocked, times(1)).getId();
+        verify(bookRepositoryMocked, times(1)).delete(bookSavedMocked);
+    }
+
+    @Test
+    @DisplayName("Devera lancar exception quando nao se informar um Book para exclusao")
+    public void deleteBookNullTest() {
+
+        // When execute save
+        Throwable exception = Assertions.catchThrowable(() -> bookService.delete(null));
+
+        // Then validate exception
+        assertThat(exception)
+                .isNotNull()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Book id cant be null");
+    }
+
+    @Test
+    @DisplayName("Devera lancar exception quando se tenta exluir um Book sem ID")
+    public void deleteBookWithoutIdTest() {
+
+        // Given
+        given(bookSavedMocked.getId()).willReturn(null);
+
+        // When execute save
+        Throwable exception = Assertions.catchThrowable(() -> bookService.delete(bookSavedMocked));
+
+        // Then validate exception
+        assertThat(exception)
+                .isNotNull()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Book id cant be null");
+
+        // Then
+        verify(bookSavedMocked, times(1)).getId();
+    }
+
+    @Test
+    @DisplayName("Deve atualizar um livro")
+    public void updateBookTest() {
+
+        // Given
+        given(bookSavedMocked.getId()).willReturn(ID);
+        given(bookRepositoryMocked.save(bookSavedMocked)).willReturn(bookSavedMocked);
+
+
+        // When
+        Book update = bookService.update(bookSavedMocked);
+
+        // Then
+        assertThat(update).isNotNull();
+
+        // And verify mocks interaction
+        verify(bookSavedMocked, times(1)).getId();
+        verify(bookRepositoryMocked, times(1)).save(bookSavedMocked);
+    }
+
+    @Test
+    @DisplayName("Devera lancar exception quando nao se informar um Book para update")
+    public void updateBookNullTest() {
+
+        // When execute save
+        Throwable exception = Assertions.catchThrowable(() -> bookService.update(null));
+
+        // Then validate exception
+        assertThat(exception)
+                .isNotNull()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Book id cant be null");
+    }
+
+    @Test
+    @DisplayName("Devera lancar exception quando se tenta atualizar um Book sem ID")
+    public void updateBookWithoutIdTest() {
+
+        // Given
+        given(bookSavedMocked.getId()).willReturn(null);
+
+        // When execute save
+        Throwable exception = Assertions.catchThrowable(() -> bookService.update(bookSavedMocked));
+
+        // Then validate exception
+        assertThat(exception)
+                .isNotNull()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Book id cant be null");
+
+        // Then
+        verify(bookSavedMocked, times(1)).getId();
     }
 }
