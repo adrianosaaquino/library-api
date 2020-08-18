@@ -16,6 +16,8 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class BookForm {
 
+    // TODO - unit test
+
     private Long id;
 
     @NotNull
