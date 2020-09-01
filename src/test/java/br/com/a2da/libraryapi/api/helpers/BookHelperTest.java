@@ -1,7 +1,7 @@
 package br.com.a2da.libraryapi.api.helpers;
 
-import br.com.a2da.libraryapi.api.dto.BookDTO;
-import br.com.a2da.libraryapi.api.model.Book;
+import br.com.a2da.libraryapi.api.controller.book.BookDTO;
+import br.com.a2da.libraryapi.core.model.Book;
 
 // BookControllerHelperTest
 public class BookHelperTest {

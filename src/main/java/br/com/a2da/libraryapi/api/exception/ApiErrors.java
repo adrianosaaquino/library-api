@@ -1,5 +1,6 @@
 package br.com.a2da.libraryapi.api.exception;
 
+import br.com.a2da.libraryapi.core.exception.BusinessException;
 import org.springframework.validation.BindingResult;
 
 import java.util.ArrayList;

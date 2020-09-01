@@ -1,6 +1,6 @@
 package br.com.a2da.libraryapi.api.controller.book;
 
-import br.com.a2da.libraryapi.api.model.Book;
+import br.com.a2da.libraryapi.core.model.Book;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

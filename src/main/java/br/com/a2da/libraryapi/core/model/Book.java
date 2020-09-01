@@ -1,4 +1,4 @@
-package br.com.a2da.libraryapi.api.model;
+package br.com.a2da.libraryapi.core.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

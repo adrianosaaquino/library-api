@@ -1,9 +1,10 @@
-package br.com.a2da.libraryapi.api.service.impl;
+package br.com.a2da.libraryapi.core.service.book;
 
-import br.com.a2da.libraryapi.api.exception.BusinessException;
-import br.com.a2da.libraryapi.api.model.Book;
-import br.com.a2da.libraryapi.api.repository.BookRepository;
-import br.com.a2da.libraryapi.api.service.BookService;
+import br.com.a2da.libraryapi.core.exception.BusinessException;
+import br.com.a2da.libraryapi.core.model.Book;
+import br.com.a2da.libraryapi.core.repository.BookRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -50,5 +51,10 @@ public class BookServiceImpl implements BookService {
         }
 
         return bookRepository.save(book);
+    }
+
+    @Override
+    public Page<Book> find(BookQuery filter, Pageable pageRequest) {
+        return null;
     }
 }

@@ -1,4 +1,4 @@
-package br.com.a2da.libraryapi.api.exception;
+package br.com.a2da.libraryapi.core.exception;
 
 public class BusinessException extends RuntimeException {
 

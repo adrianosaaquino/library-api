@@ -1,13 +1,14 @@
 package br.com.a2da.libraryapi.api.controller.book;
 
-import br.com.a2da.libraryapi.api.controller.util.MarshallerService;
-import br.com.a2da.libraryapi.api.exception.BusinessException;
 import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
-import br.com.a2da.libraryapi.api.model.Book;
-import br.com.a2da.libraryapi.api.service.BookService;
+import br.com.a2da.libraryapi.core.exception.BusinessException;
+import br.com.a2da.libraryapi.core.model.Book;
+import br.com.a2da.libraryapi.core.service.book.BookQuery;
+import br.com.a2da.libraryapi.core.service.book.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -26,10 +30,12 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,6 +47,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public class BookControllerTest {
 
+    /*
+     * Toda action em uma controller devera receber:
+     * - PathVariable: atributo passado direto na assinatura da action
+     * - EntityForm: Classe responsavel por receber os params da request e mapear para o metodo
+     * - EntityQueryForm: Classe responsavel por receber os params da request e mapear para o metodo
+     *
+     * O EntityMarshallerService tera a responsabilidade de converter (entrada):
+     * - EntityForm -> Entity que sera passado para o service (service.method(Entity))
+     * - EntityQueryForm -> EntityQuery que sera passado para o service (service.method(EntityQuery))
+     *
+     * O EntityMarshallerService tera a responsabilidade de converter (saida):
+     * - Entity -> EntityDTO -> que sera retorada pela action
+     * - EntityQueryForm -> EntityQuery ?????
+     * */
+
     static String BOOK_API = "/api/books";
 
     @Autowired
@@ -50,21 +71,32 @@ public class BookControllerTest {
     BookService bookServiceMocked;
 
     @MockBean
-    MarshallerService marshallerServiceMocked;
+    BookMarshallerService bookMarshallerServiceMocked;
 
     @Autowired
     ObjectMapper objectMapper;
 
-    final Book bookMocked = mock(Book.class);
+    final Book bookFromBookFormMocked = mock(Book.class);
+    final Book bookWithIdMocked = mock(Book.class);
+    final BookQuery bookQueryMocked = mock(BookQuery.class);
     final Long ID = BookHelperTest.ID;
     final Long ID_NOT_FOUND = BookHelperTest.ID_NOT_FOUND;
+    BookDTO bookDTOWithId;
+
+    @BeforeEach
+    public void beforeEachTest() {
+
+        bookDTOWithId = BookDTO.builder().id(ID).build();
+    }
 
     @AfterEach
     public void afterEachTest() {
 
-        verifyNoMoreInteractions(bookMocked);
+        verifyNoMoreInteractions(bookFromBookFormMocked);
+        verifyNoMoreInteractions(bookWithIdMocked);
+        verifyNoMoreInteractions(bookQueryMocked);
         verifyNoMoreInteractions(bookServiceMocked);
-        verifyNoMoreInteractions(marshallerServiceMocked);
+        verifyNoMoreInteractions(bookMarshallerServiceMocked);
     }
 
     @Test
@@ -81,13 +113,12 @@ public class BookControllerTest {
         );
 
         // Expected that call
-        given(bookServiceMocked.save(Mockito.any(Book.class))).willReturn(bookMocked);
-
-        given(marshallerServiceMocked.bindBook(bookMocked)).willReturn(
-                new HashMap<String, Object>() {{
-                    put("id", ID);
-                }}
-        );
+        given(bookMarshallerServiceMocked.bindToBookSave(Mockito.any(BookForm.class)))
+                .willReturn(bookFromBookFormMocked);
+        given(bookServiceMocked.save(bookFromBookFormMocked))
+                .willReturn(bookWithIdMocked);
+        given(bookMarshallerServiceMocked.bindToBookDTO(bookWithIdMocked))
+                .willReturn(bookDTOWithId);
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -105,15 +136,18 @@ public class BookControllerTest {
         ;
 
         // And verify mocks interaction
-        ArgumentCaptor<Book> bindToSaveModel = ArgumentCaptor.forClass(Book.class);
-        verify(bookServiceMocked, times(1)).save(bindToSaveModel.capture());
+        ArgumentCaptor<BookForm> bookForm = ArgumentCaptor.forClass(BookForm.class);
 
-        Book bookSaveParam = bindToSaveModel.getValue();
-        assertThat(bookSaveParam.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
-        assertThat(bookSaveParam.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
-        assertThat(bookSaveParam.getIsbn()).isEqualTo(BookHelperTest.DOM_CASMURRO_ISBN);
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindToBookSave(bookForm.capture());
 
-        verify(marshallerServiceMocked, times(1)).bindBook(bookMocked);
+        BookForm bookFormParam = bookForm.getValue();
+        assertThat(bookFormParam.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        assertThat(bookFormParam.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+        assertThat(bookFormParam.getIsbn()).isEqualTo(BookHelperTest.DOM_CASMURRO_ISBN);
+
+        verify(bookServiceMocked, times(1)).save(bookFromBookFormMocked);
+        verify(bookMarshallerServiceMocked, times(1)).bindToBookDTO(bookWithIdMocked);
     }
 
     @Test
@@ -141,7 +175,7 @@ public class BookControllerTest {
     }
 
     @Test
-    @DisplayName("Deve lançar erro ao tentar cadastrar um livro com isbn que ja existe")
+    @DisplayName("Deve retornar um erro quando save lançar BusinessException")
     public void createBookWithDuplicatedIsbn() throws Exception {
 
         // Given JSON body with duplicated isbn
@@ -154,8 +188,10 @@ public class BookControllerTest {
         );
 
         // Expected that call save
-        given(bookServiceMocked.save(Mockito.any(Book.class)))
-                .willThrow(new BusinessException("Isbn ja cadastrado"));
+        given(bookMarshallerServiceMocked.bindToBookSave(Mockito.any(BookForm.class)))
+                .willReturn(bookFromBookFormMocked);
+        given(bookServiceMocked.save(bookFromBookFormMocked))
+                .willThrow(new BusinessException("Error"));
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -170,9 +206,12 @@ public class BookControllerTest {
         resultActions
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(jsonPath("errors", Matchers.hasSize(1)))
-                .andExpect(jsonPath("errors[0]").value("Isbn ja cadastrado"));
+                .andExpect(jsonPath("errors[0]").value("Error"));
 
         // And verify mocks interaction
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindToBookSave(Mockito.any(BookForm.class));
+
         verify(bookServiceMocked, times(1))
                 .save(Mockito.any(Book.class));
     }
@@ -185,12 +224,9 @@ public class BookControllerTest {
 
         // Expected that call findById
         given(bookServiceMocked.findById(ID))
-                .willReturn(Optional.of(bookMocked));
-
-        given(marshallerServiceMocked.bindBook(bookMocked))
-                .willReturn(new HashMap<String, Object>() {{
-                    put("id", ID);
-                }});
+                .willReturn(Optional.of(bookWithIdMocked));
+        given(bookMarshallerServiceMocked.bindToBookDTO(bookWithIdMocked))
+                .willReturn(bookDTOWithId);
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -206,8 +242,10 @@ public class BookControllerTest {
         ;
 
         // And verify mocks interaction
-        verify(bookServiceMocked, times(1)).findById(ID);
-        verify(marshallerServiceMocked, times(1)).bindBook(bookMocked);
+        verify(bookServiceMocked, times(1))
+                .findById(ID);
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindToBookDTO(bookWithIdMocked);
     }
 
     @Test
@@ -232,7 +270,8 @@ public class BookControllerTest {
         ;
 
         // And verify mocks interaction
-        verify(bookServiceMocked, times(1)).findById(ID_NOT_FOUND);
+        verify(bookServiceMocked, times(1))
+                .findById(ID_NOT_FOUND);
     }
 
     @Test
@@ -242,7 +281,8 @@ public class BookControllerTest {
         // Given a Book ID that exists
 
         // Expected that call findById
-        given(bookServiceMocked.findById(ID)).willReturn(Optional.of(bookMocked));
+        given(bookServiceMocked.findById(ID))
+                .willReturn(Optional.of(bookWithIdMocked));
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -256,7 +296,7 @@ public class BookControllerTest {
 
         // And verify mocks interaction
         verify(bookServiceMocked, times(1)).findById(ID);
-        verify(bookServiceMocked, times(1)).delete(bookMocked);
+        verify(bookServiceMocked, times(1)).delete(bookWithIdMocked);
     }
 
     @Test
@@ -298,15 +338,21 @@ public class BookControllerTest {
         );
 
         // Expected that call
-        given(bookServiceMocked.findById(ID)).willReturn(Optional.of(bookMocked));
+        given(bookServiceMocked.findById(ID))
+                .willReturn(Optional.of(bookWithIdMocked));
 
-        given(bookServiceMocked.update(bookMocked)).willReturn(bookMocked);
+        given(
+                bookMarshallerServiceMocked.bindToBookUpdate(
+                        Mockito.any(BookForm.class),
+                        eq(bookWithIdMocked)
+                )
+        ).willReturn(bookWithIdMocked);
 
-        given(marshallerServiceMocked.bindBook(bookMocked)).willReturn(
-                new HashMap<String, Object>() {{
-                    put("id", ID);
-                }}
-        );
+        given(bookServiceMocked.update(bookWithIdMocked))
+                .willReturn(bookWithIdMocked);
+
+        given(bookMarshallerServiceMocked.bindToBookDTO(bookWithIdMocked))
+                .willReturn(bookDTOWithId);
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -324,15 +370,24 @@ public class BookControllerTest {
         ;
 
         // And verify mocks interaction
-        verify(bookServiceMocked, times(1)).findById(ID);
+        verify(bookServiceMocked, times(1))
+                .findById(ID);
 
-        verify(bookMocked, times(1)).setAuthor(BookHelperTest.JORGE_AMADO);
-        verify(bookMocked, times(1)).setTitle(BookHelperTest.CAPITAES_DA_AREIA);
-        verify(bookMocked, times(1)).setIsbn(BookHelperTest.CAPITAES_DA_AREIA_ISBN);
+        ArgumentCaptor<BookForm> bookForm = ArgumentCaptor.forClass(BookForm.class);
 
-        verify(bookServiceMocked, times(1)).update(bookMocked);
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindToBookUpdate(bookForm.capture(), eq(bookWithIdMocked));
 
-        verify(marshallerServiceMocked, times(1)).bindBook(bookMocked);
+        BookForm bookFormParam = bookForm.getValue();
+        assertThat(bookFormParam.getAuthor()).isEqualTo(BookHelperTest.JORGE_AMADO);
+        assertThat(bookFormParam.getTitle()).isEqualTo(BookHelperTest.CAPITAES_DA_AREIA);
+        assertThat(bookFormParam.getIsbn()).isEqualTo(BookHelperTest.CAPITAES_DA_AREIA_ISBN);
+
+        verify(bookServiceMocked, times(1))
+                .update(bookWithIdMocked);
+
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindToBookDTO(bookWithIdMocked);
     }
 
     @Test
@@ -349,7 +404,8 @@ public class BookControllerTest {
         );
 
         // Expected that call findById
-        given(bookServiceMocked.findById(ID_NOT_FOUND)).willReturn(Optional.empty());
+        given(bookServiceMocked.findById(ID_NOT_FOUND))
+                .willReturn(Optional.empty());
 
         // When execute request
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
@@ -365,8 +421,77 @@ public class BookControllerTest {
                 .andExpect(status().isNotFound());
 
         // And verify mocks interaction
-        verify(bookServiceMocked, times(1)).findById(ID_NOT_FOUND);
+        verify(bookServiceMocked, times(1))
+                .findById(ID_NOT_FOUND);
     }
 
+    @Test
+    @DisplayName("Deve filtrar livros pelas propriedades")
+    public void findBookTest() throws Exception {
+
+        // Given a query request
+        String queryString = String.format(
+                "?title=%s&author=%s&page=0&size=100",
+                BookHelperTest.DOM_CASMURRO,
+                BookHelperTest.MACHADO_DE_ASSIS
+        );
+
+        // Expected that call
+        given(bookMarshallerServiceMocked.bindBookQueryFormToBookQuery(any(BookQueryForm.class)))
+                .willReturn(bookQueryMocked);
+
+        given(bookServiceMocked.find(eq(bookQueryMocked), any(Pageable.class)))
+                .willReturn(
+                        new PageImpl<Book>(
+                                Arrays.asList(bookWithIdMocked, bookWithIdMocked),
+                                PageRequest.of(0, 100),
+                                1
+                        )
+                );
+
+        given(bookMarshallerServiceMocked.bindToBookDTO(bookWithIdMocked))
+                .willReturn(bookDTOWithId);
+
+        // When execute request
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .get(BOOK_API.concat(queryString))
+                .accept(MediaType.APPLICATION_JSON);
+
+        ResultActions resultActions = mockMvc.perform(request);
+
+        // Then validate response
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("content", Matchers.hasSize(2)))
+                .andExpect(jsonPath("totalElements").value(2))
+                .andExpect(jsonPath("pageable.pageSize").value(100))
+                .andExpect(jsonPath("pageable.pageNumber").value(0))
+        ;
+
+        // And verify mocks interaction
+
+        ArgumentCaptor<BookQueryForm> bookQueryForm = ArgumentCaptor.forClass(BookQueryForm.class);
+
+        verify(bookMarshallerServiceMocked, times(1))
+                .bindBookQueryFormToBookQuery(bookQueryForm.capture());
+
+        BookQueryForm bookQueryFormParam = bookQueryForm.getValue();
+        assertThat(bookQueryFormParam.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        assertThat(bookQueryFormParam.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+
+        verify(bookServiceMocked, times(1))
+                .find(eq(bookQueryMocked), pageable.capture());
+
+        Pageable pageableParam = pageable.getValue();
+        assertThat(pageableParam.getPageNumber()).isEqualTo(0);
+        assertThat(pageableParam.getPageSize()).isEqualTo(100);
+
+
+        verify(bookMarshallerServiceMocked, times(2))
+                .bindToBookDTO(bookWithIdMocked);
+    }
 }
 

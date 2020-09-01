@@ -1,8 +1,8 @@
 package br.com.a2da.libraryapi.api.controller.util;
 
 import br.com.a2da.libraryapi.api.controller.book.BookForm;
-import br.com.a2da.libraryapi.api.dto.BookDTO;
-import br.com.a2da.libraryapi.api.model.Book;
+import br.com.a2da.libraryapi.api.controller.book.BookDTO;
+import br.com.a2da.libraryapi.core.model.Book;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 

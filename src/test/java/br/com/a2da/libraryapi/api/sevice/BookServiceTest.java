@@ -1,11 +1,11 @@
 package br.com.a2da.libraryapi.api.sevice;
 
-import br.com.a2da.libraryapi.api.exception.BusinessException;
+import br.com.a2da.libraryapi.core.exception.BusinessException;
 import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
-import br.com.a2da.libraryapi.api.model.Book;
-import br.com.a2da.libraryapi.api.repository.BookRepository;
-import br.com.a2da.libraryapi.api.service.BookService;
-import br.com.a2da.libraryapi.api.service.impl.BookServiceImpl;
+import br.com.a2da.libraryapi.core.model.Book;
+import br.com.a2da.libraryapi.core.repository.BookRepository;
+import br.com.a2da.libraryapi.core.service.book.BookService;
+import br.com.a2da.libraryapi.core.service.book.BookServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
