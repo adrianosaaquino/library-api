@@ -1,7 +1,7 @@
 package br.com.a2da.libraryapi.core.repository;
 
-import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.core.model.Book;
+import br.com.a2da.libraryapi.helperTest.BookHelperTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

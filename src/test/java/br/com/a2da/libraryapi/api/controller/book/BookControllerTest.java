@@ -1,10 +1,10 @@
 package br.com.a2da.libraryapi.api.controller.book;
 
-import br.com.a2da.libraryapi.api.helpers.BookHelperTest;
 import br.com.a2da.libraryapi.core.exception.BusinessException;
 import br.com.a2da.libraryapi.core.model.Book;
 import br.com.a2da.libraryapi.core.service.book.BookQuery;
 import br.com.a2da.libraryapi.core.service.book.BookService;
+import br.com.a2da.libraryapi.helperTest.BookHelperTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;

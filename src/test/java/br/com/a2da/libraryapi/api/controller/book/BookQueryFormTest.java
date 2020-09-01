@@ -6,7 +6,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
-public class BookFormTest {
+public class BookQueryFormTest {
 
     // TODO - implemente-me
 }

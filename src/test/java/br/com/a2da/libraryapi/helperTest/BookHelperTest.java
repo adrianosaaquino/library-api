@@ -1,4 +1,4 @@
-package br.com.a2da.libraryapi.api.helpers;
+package br.com.a2da.libraryapi.helperTest;
 
 import br.com.a2da.libraryapi.api.controller.book.BookDTO;
 import br.com.a2da.libraryapi.core.model.Book;
