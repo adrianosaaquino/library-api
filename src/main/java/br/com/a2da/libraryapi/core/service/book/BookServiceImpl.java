@@ -3,6 +3,8 @@ package br.com.a2da.libraryapi.core.service.book;
 import br.com.a2da.libraryapi.core.exception.BusinessException;
 import br.com.a2da.libraryapi.core.model.Book;
 import br.com.a2da.libraryapi.core.repository.BookRepository;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -54,7 +56,26 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Page<Book> find(BookQuery filter, Pageable pageRequest) {
-        return null;
+    public Page<Book> find(BookQuery bookQuery, Pageable pageRequest) {
+
+        // TODO - usar criteria????
+        // https://www.baeldung.com/spring-data-criteria-queries
+
+        Book book = new Book();
+        book.setAuthor(bookQuery.getAuthor());
+        book.setTitle(bookQuery.getTitle());
+
+        Example<Book> example = Example.of(
+                book,
+                ExampleMatcher
+                        .matching()
+                        .withIgnoreCase()
+                        .withIgnoreNullValues()
+                        .withStringMatcher(
+                                ExampleMatcher.StringMatcher.CONTAINING
+                        )
+        );
+
+        return bookRepository.findAll(example, pageRequest);
     }
 }

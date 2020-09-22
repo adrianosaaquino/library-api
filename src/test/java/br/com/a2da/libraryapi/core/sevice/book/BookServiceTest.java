@@ -3,6 +3,7 @@ package br.com.a2da.libraryapi.core.sevice.book;
 import br.com.a2da.libraryapi.core.exception.BusinessException;
 import br.com.a2da.libraryapi.core.model.Book;
 import br.com.a2da.libraryapi.core.repository.BookRepository;
+import br.com.a2da.libraryapi.core.service.book.BookQuery;
 import br.com.a2da.libraryapi.core.service.book.BookService;
 import br.com.a2da.libraryapi.core.service.book.BookServiceImpl;
 import br.com.a2da.libraryapi.helperTest.BookHelperTest;
@@ -12,11 +13,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +41,7 @@ public class BookServiceTest {
     final Book bookSavedMocked = mock(Book.class);
     final Long ID = BookHelperTest.ID;
     final Long ID_NOT_FOUND = BookHelperTest.ID_NOT_FOUND;
+    final BookQuery bookQueryMocked = mock(BookQuery.class);
 
     @BeforeEach
     public void setUp() {
@@ -46,6 +52,9 @@ public class BookServiceTest {
     public void afterEachTest() {
 
         verifyNoMoreInteractions(bookRepositoryMocked);
+        verifyNoMoreInteractions(bookToSaveMocked);
+        verifyNoMoreInteractions(bookSavedMocked);
+        verifyNoMoreInteractions(bookQueryMocked);
     }
 
     @Test
@@ -191,7 +200,6 @@ public class BookServiceTest {
         given(bookSavedMocked.getId()).willReturn(ID);
         given(bookRepositoryMocked.save(bookSavedMocked)).willReturn(bookSavedMocked);
 
-
         // When
         Book update = bookService.update(bookSavedMocked);
 
@@ -235,5 +243,62 @@ public class BookServiceTest {
 
         // Then
         verify(bookSavedMocked, times(1)).getId();
+    }
+
+    @Test
+    @DisplayName("Deve filtrar livros pelas propriedades")
+    public void findBookTest() throws Exception {
+
+        // Given
+        given(bookQueryMocked.getAuthor()).willReturn(BookHelperTest.MACHADO_DE_ASSIS);
+        given(bookQueryMocked.getTitle()).willReturn(BookHelperTest.DOM_CASMURRO);
+
+        PageRequest pageRequest = PageRequest.of(0, 10);
+
+        List<Book> bookInstanceList = Arrays.asList(bookSavedMocked);
+
+        PageImpl<Book> findAllResultReturn = new PageImpl<>(
+                bookInstanceList,
+                pageRequest,
+                1
+        );
+
+        given(bookRepositoryMocked.findAll(
+                Mockito.any(Example.class),
+                Mockito.any(PageRequest.class)
+        )).willReturn(findAllResultReturn);
+
+        // When execute find
+        Page<Book> result = bookService.find(bookQueryMocked, pageRequest);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).isEqualTo(bookInstanceList);
+        assertThat(result.getPageable().getPageNumber()).isEqualTo(0);
+        assertThat(result.getPageable().getPageSize()).isEqualTo(10);
+
+        // And verify mocks interaction
+        verify(bookQueryMocked, times(1)).getAuthor();
+        verify(bookQueryMocked, times(1)).getTitle();
+
+        ArgumentCaptor<Example> example = ArgumentCaptor.forClass(Example.class);
+
+        verify(bookRepositoryMocked, times(1)).findAll(
+                example.capture(),
+                Mockito.any(PageRequest.class)
+        );
+
+        Example value = example.getValue();
+
+        Book book = (Book) value.getProbe();
+
+        assertThat(book.getAuthor()).isEqualTo(BookHelperTest.MACHADO_DE_ASSIS);
+        assertThat(book.getTitle()).isEqualTo(BookHelperTest.DOM_CASMURRO);
+
+        ExampleMatcher matcher = value.getMatcher();
+
+        assertThat(matcher.getDefaultStringMatcher()).isEqualTo(ExampleMatcher.StringMatcher.CONTAINING);
+        assertThat(matcher.getMatchMode()).isEqualTo(ExampleMatcher.MatchMode.ALL);
+        assertThat(matcher.getNullHandler()).isEqualTo(ExampleMatcher.NullHandler.IGNORE);
     }
 }
